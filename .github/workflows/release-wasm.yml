@@ -1,0 +1,21 @@
+name: Deterministic WASM Release & Rekor v2 Attestation
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  reproducible-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder deterministic dual-path WASM gate
+        run: |
+          echo "Sprint 1 will wire dual-path (/build-a vs /build-b) deterministic WASM builds,"
+          echo "assert identical sha256sum, and sign release-manifest.json via Sigstore Cosign -> Rekor v2."

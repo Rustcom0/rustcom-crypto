@@ -1,0 +1,37 @@
+name: Crypto CI & Security Gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+      - id: check_cargo
+        run: |
+          if [ -f Cargo.toml ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.check_cargo.outputs.exists == 'true'
+        uses: dtolnay/rust-toolchain@master
+        with:
+          targets: wasm32-unknown-unknown
+      - if: steps.check_cargo.outputs.exists == 'true'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-deny,cargo-nextest
+      - if: steps.check_cargo.outputs.exists == 'true'
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo check -p rustcom-crypto-wasm --target wasm32-unknown-unknown
+          cargo audit
+          cargo deny check
+          cargo nextest run --workspace
