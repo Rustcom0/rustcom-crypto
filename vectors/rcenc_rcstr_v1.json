@@ -1,0 +1,49 @@
+{
+  "rcenc_v1": {
+    "rng_label": "kat-rcenc-v1-order-fulfillment-strict",
+    "seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "tenant_id_hex": "11111111111111111111111111111111",
+    "resource_id_hex": "22222222222222222222222222222222",
+    "envelope_kind": 1,
+    "privacy_tier": 3,
+    "schema_version": 1,
+    "key_version": 1,
+    "plaintext_hex": "7b226f72646572223a2252432d30303031222c2263697479223a224265726c696e227d",
+    "expected_public_key_blake3_hex": "ece5aac3e2fc9dfbd6a9bafe80edf1981f01375e039ae4574c0f4df016a21e6e",
+    "expected_canonical_aad_hex": "72757374636f6d2d76312d616164011111111111111111111111111111111122222222222222222222222222222222030001c075a8baecbf82b9e614850b1823fb632df08bd0975fd90f08c8d471794e879d",
+    "expected_envelope_blake3_hex": "ffabb4bb84065bd0875cddef10b06f5b2271efc46ddd8ce710931b645bce7df1",
+    "expected_envelope_len": 1304
+  },
+  "rcenc_v1_multi_compressed": {
+    "rng_label": "kat-rcenc-v1-multi-recipient-compressed",
+    "seed_hex": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+    "argon2_kem_data_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f000100000000000300000001",
+    "argon2_kek_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recovery_kek_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "tenant_id_hex": "55555555555555555555555555555555",
+    "resource_id_hex": "66666666666666666666666666666666",
+    "plaintext_hex": "50726976617465205649502070726f64756374206d65746164617461",
+    "expected_envelope_blake3_hex": "38f76885e7efab1f319dd6955f81ee49340d4d42dc066fb0f7722ed85a8b8c35",
+    "expected_envelope_len": 1531
+  },
+  "rcstr_v1": {
+    "rng_label": "kat-rcstr-v1-private-asset-strict",
+    "seed_hex": "1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100",
+    "tenant_id_hex": "33333333333333333333333333333333",
+    "file_id_hex": "44444444444444444444444444444444",
+    "chunk_size": 4096,
+    "plaintext_hex": "52757374636f6d20706f73742d7175616e74756d2073747265616d696e6720766563746f72",
+    "expected_stream_blake3_hex": "e4fef8911aa9006ff9c1fe02490af525a0deb9357ccf95f06c6836fab5b17ded",
+    "expected_stream_len": 1406
+  },
+  "rcstr_v1_multi_chunk": {
+    "rng_label": "kat-rcstr-v1-multi-chunk-5000b",
+    "seed_hex": "2f2e2d2c2b2a292827262524232221201f1e1d1c1b1a19181716151413121110",
+    "tenant_id_hex": "77777777777777777777777777777777",
+    "file_id_hex": "88888888888888888888888888888888",
+    "chunk_size": 4096,
+    "plaintext_len": 5000,
+    "expected_stream_blake3_hex": "23f6c070a0322564f5e01f4ee1d06c26abfd1df2a25582f7dcc5b3445e9e7080",
+    "expected_stream_len": 6385
+  }
+}

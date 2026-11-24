@@ -1,0 +1,65 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/rustcom-crypto-core",
+  "crates/rustcom-crypto-wasm",
+  "crates/rustcom-verify",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "AGPL-3.0-only"
+repository = "https://github.com/Rustcom0/rustcom-crypto"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+disallowed_methods = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+dbg_macro = "deny"
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+
+[workspace.dependencies]
+rustcom-crypto-core = { path = "crates/rustcom-crypto-core" }
+
+argon2 = { version = "0.6.0", default-features = false, features = ["alloc", "zeroize"] }
+base64ct = { version = "1.8.3", default-features = false, features = ["alloc"] }
+blake3 = { version = "1.8.7", default-features = false, features = ["pure", "zeroize"] }
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc", "getrandom", "zeroize"] }
+clap = { version = "4.6.9", features = ["derive"] }
+der = { version = "0.8.3", default-features = false, features = ["alloc", "pem", "std"] }
+ed25519-dalek = { version = "3.0.0", default-features = false, features = ["fast", "zeroize"] }
+getrandom = { version = "0.4.3", default-features = false }
+hex = "0.4.3"
+hkdf = { version = "0.13.0", default-features = false }
+html5gum = { version = "0.9.2", default-features = false }
+p256 = { version = "0.14.0", default-features = false, features = ["ecdsa", "pkcs8", "std"] }
+p384 = { version = "0.14.0", default-features = false, features = ["ecdsa", "pkcs8", "std"] }
+proptest = "1.12.0"
+rand_core = { version = "0.10.1", default-features = false }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = { version = "0.11.1", default-features = false, features = ["zeroize"] }
+subtle = { version = "2.6.1", default-features = false }
+ureq = { version = "3.5.2", default-features = false, features = ["rustls", "gzip"] }
+wasm-bindgen = "0.2.130"
+x-wing = { version = "0.1.1", default-features = false, features = ["getrandom", "zeroize"] }
+x25519-dalek = { version = "3.0.0", default-features = false, features = ["static_secrets", "zeroize"] }
+x509-cert = { version = "0.3.1", default-features = false, features = ["std"] }
+zeroize = { version = "1.9.2", default-features = false, features = ["alloc", "derive"] }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

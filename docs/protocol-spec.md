@@ -23,8 +23,10 @@ Fixed big-endian binary framing eliminates JSON canonicalization bugs across nat
 |                          0x04 = PrivateProduct                    |
 |                          0x05 = StaffKeyWrap                      |
 |                          0x06 = RecoveryBackup                    |
-|   flags           [1B] : bit0=compressed(zstd), bits1..7=0        |
-|   recipient_count [1B] : 1..=8                                    |
+|   flags           [1B] : bit0=compressed(zstd), bit1=rcstr_header |
+|                          (internal only; rejected by standalone     |
+|                           rcenc::decrypt), bits2..7=0               |
+|   recipient_count [1B] : 1..=8 (unique (type,key_id,key_version))   |
 +-------------------------------------------------------------------+
 | RECIPIENT SLOTS (repeated recipient_count times)                  |
 |   recipient_type  [1B] : 0x01 = XWingOrgKey                       |
@@ -34,8 +36,9 @@ Fixed big-endian binary framing eliminates JSON canonicalization bugs across nat
 |                          0x05 = Argon2idPassword (Private Prod)   |
 |                          0x06 = RecoveryBip39                     |
 |   key_id         [16B] : UUID or BLAKE3(pub_key)[0..16]           |
-|   key_version     [4B] : u32 BE                                   |
-|   kem_data_len    [2B] : u16 BE (1120 for X-Wing; 44 for Argon2)  |
+|   key_version     [4B] : u32 BE (>= 1; 0 rejected)                |
+|   kem_data_len    [2B] : u16 BE (1120 for X-Wing; 44 for Argon2;  |
+|                                   0 for RecoveryBip39)              |
 |   kem_data        [NB] : X-Wing ciphertext OR (salt[32]+params)   |
 |   wrap_nonce     [24B] : CSPRNG XChaCha20 nonce                   |
 |   wrapped_dek    [48B] : AEAD(wrap_key, wrap_nonce, DEK[32],      |
@@ -68,11 +71,13 @@ Fixed big-endian binary framing eliminates JSON canonicalization bugs across nat
 
 ## 2. Chunked Streaming E2EE for Large Private Files (`RCSTR` v1)
 
-- Header: `"RCSTR"` (`5B`) + `version=0x01` (`1B`) + `chunk_size=65536` (`4B u32 BE`) + `file_nonce_prefix` (`16B` CSPRNG) + `RCENC` wrapped 32-byte `FileDEK`.
-- Per chunk `i = 0, 1, ...`:
+- Header (`26B` fixed prefix + embedded self-delimiting `RCENC` v1 envelope):
+  - Fixed prefix (`26B`): `"RCSTR"` (`5B`) + `version=0x01` (`1B`) + `chunk_size` (`4B u32 BE`, default `65536`, valid range `4096..=4194304`) + `file_nonce_prefix` (`16B` CSPRNG).
+  - Embedded `RCENC` v1 payload (`58B`, `flags = 0x02` `rcstr_header` domain-separated from standalone `RCENC`, ciphertext length strictly `74B` verified before decapsulation): `FileDEK[32B] || rcstr_fixed_header[26B]`. On decrypt, the authenticated 26-byte copy is verified in constant time (`subtle::ConstantTimeEq`) against the wire prefix so `magic`, `version`, `chunk_size`, and `file_nonce_prefix` are fully authenticated before any chunk is decrypted.
+- Per chunk `i = 0, 1, ...` (`i < 2^56`; non-final chunks MUST be exactly `chunk_size` plaintext bytes; final chunk `0..=chunk_size` bytes, including a single 0-byte final chunk for empty files):
   - Nonce (`24B`): `file_nonce_prefix[16B] || chunk_index[7B BE] || is_final_flag[1B: 0x00 | 0x01]`.
-  - Chunk AAD: `"rustcom-v1-stream" || tenant_id[16B] || file_id[16B] || chunk_index[8B BE] || is_final_flag[1B]`.
-- Constant ~128 KB RAM for multi-GB uploads/downloads in WASM; authenticates chunk order and prevents silent truncation.
+  - Chunk AAD (`58B`): `"rustcom-v1-stream" || tenant_id[16B] || file_id[16B] || chunk_index[8B BE] || is_final_flag[1B]`.
+- Constant ~128 KB RAM for multi-GB uploads/downloads in WASM; authenticates chunk order and prevents silent truncation, extension, or header malleation.
 
 ---
 
@@ -80,34 +85,58 @@ Fixed big-endian binary framing eliminates JSON canonicalization bugs across nat
 
 - **Staff Auth:** `opaque-ke` (`Ristretto255` + `Argon2id`) -- server stores ONLY OPAQUE registration record.
 - **Personal Vault KEK:** Separate `key_salt[32B]` -> `Argon2id(password, key_salt, m=65536 KiB, t=3, p=1)` unwraps `Staff_XWing_SK` + `Staff_Ed25519_SK`.
-- **Admin-Signed Staff Org Key Grants (`StaffGrantV1`):**
+- **Admin-Signed Staff Org Key Grants (`StaffGrantV1`, `158 B` wire) & Org Key Wrapping:**
   ```text
-  grant_msg = "rustcom-v1-staff-grant"
-              || tenant_id[16B] || vault_role[1B: 1=OrgMaster,2=Fulfillment,3=Accounting]
-              || store_key_ver[4B] || target_staff_id[16B]
-              || BLAKE3(target_staff_xwing_pk)[32B]
-              || issued_at_unix[8B] || grantor_staff_id[16B]
-  grant_sig = Ed25519_Sign(grantor_ed25519_sk, grant_msg)
+  grant_msg [115B] = "rustcom-v1-staff-grant"[22B]
+                     || tenant_id[16B] || vault_role[1B: 1=OrgMaster,2=Fulfillment,3=Accounting]
+                     || store_key_ver[4B BE, >=1] || target_staff_id[16B]
+                     || BLAKE3(target_staff_xwing_pk)[32B]
+                     || issued_at_unix[8B BE, >0] || grantor_staff_id[16B]
+  grant_sig [64B]  = Ed25519_Sign(grantor_ed25519_sk, grant_msg)  (verified with verify_strict)
+  wire      [158B] = version=0x01[1B] || tenant_id[16B] || vault_role[1B] || store_key_ver[4B]
+                     || target_staff_id[16B] || target_staff_xwing_pk_hash[32B]
+                     || issued_at_unix[8B] || grantor_staff_id[16B] || grant_sig[64B]
   ```
-  Revocation deletes target wrapped row + rotates to `store_key_ver + 1` (archiving `v(N)` wrapped under `v(N+1)` for 6-10 yr VAT retention).
-- **Append-Only Signed Key List (`/.well-known/rustcom-skl.json`):** Hash-chained `prev_entry_hash = BLAKE3(canonical(entry[n-1]))`, signed by `StoreIdentity_Ed25519_SK` (cross-signed on rotation). Verified by checkout WASM before encrypting PII.
-- **Recovery Kit & Shamir:** 256-bit `RecoveryMasterSecret` -> 24-word BIP-39 phrase + printable Recovery Kit PDF/QR (`RecoveryKEK = HKDF-SHA256(secret, salt=tenant_id, info="rustcom-v1-recovery-kek")`). Enhanced+ supports optional M-of-N Shamir split over `GF(256)` with per-share SHA-256 commitments.
+  - **Staff Key Wrap (`RCSKW` v1):** Single-recipient `RCENC(kind=0x05, schema_ver=1, flags=0x00, resource_id=target_staff_id)` to `XWingStaffKey` wrapping `75 B`: `"RCSKW"[5B] || 0x01[1B] || tenant_id[16B] || vault_role[1B] || store_key_ver[4B BE] || target_staff_id[16B] || org_xwing_seed[32B]`. Unwrap MUST verify `StaffGrantV1` first and confirm the unwrapped key matches the store's SKL-anchored `expected_org_pk` in constant time.
+  - **Historical Rotation Archive (`RCARC` v1):** Revocation deletes target wrapped rows + rotates to `v(N+1)` and archives `v(N)` inside single-recipient `RCENC(kind=0x05, schema_ver=2, flags=0x00, resource_id=new_org_pk.key_id())` to `XWingOrgKey` wrapping `63 B`: `"RCARC"[5B] || 0x01[1B] || tenant_id[16B] || vault_role[1B] || archived_key_ver[4B BE] || new_key_ver[4B BE] || archived_org_xwing_seed[32B]` (with `1 <= archived_key_ver < new_key_ver` and distinct keys enforced on both wrap and unwrap, preserving 6-10 yr VAT retention).
+- **Append-Only Signed Key List (`/.well-known/rustcom-skl.json`, `SklEntryV1`):**
+  ```text
+  canonical_body [1338B] = "rustcom-v1-skl-entry"[20B] || ver=0x01[1B] || tenant_id[16B]
+                           || seq[8B BE] || vault_role[1B] || key_version[4B BE, monotonic per role]
+                           || xwing_pk[1216B, distinct across chain] || identity_ed25519_pk[32B]
+                           || issued_at_unix[8B BE, non-decreasing] || prev_entry_hash[32B]
+  signature      [64B]   = Ed25519_Sign(identity_ed25519_sk, canonical_body)
+  rotate_msg     [117B]  = "rustcom-v1-skl-rotate"[21B] || BLAKE3(canonical_body)[32B]
+                           || prev_identity_ed25519_pk[32B] || new_identity_ed25519_pk[32B]
+  canonical_wire         = canonical_body[1338B] || signature[64B] || has_cross_sig[1B: 0|1]
+                           || (rotation_cross_signature[64B] if has_cross_sig == 1)
+  prev_entry_hash [32B]  = [0; 32] at genesis (seq=0), else BLAKE3(canonical_wire(entry[n-1]))
+  ```
+  Identity rotations MUST include a strict cross-signature from `prev_identity_ed25519_pk` and MUST NOT resurrect any previously retired `identity_ed25519_pk`; non-rotation entries MUST omit cross-signatures. Verifiers enforce contiguous `seq`, gap-free monotonic `key_version` per role, distinct `xwing_pk` across all entries (blocking role collision & key resurrection), optional pinned `SklCheckpoint` anti-rollback checks, and bounded length (`<= 4,096` entries).
+- **Recovery Kit (BIP-39 24-Word + `RCREC` v1) & `GF(256)` Shamir (`RCSHR` v1):**
+  - 256-bit `RecoveryMasterSecret` encodes/decodes as a standard 24-word BIP-39 English phrase (official wordlist `SHA-256 = 2f5eed53...dbda`, constant-time lookup, 8-bit `SHA-256` checksum) and derives `RecoveryKEK = HKDF-SHA256(secret, salt=tenant_id, info="rustcom-v1-recovery-kek")`.
+  - **Recovery Backup (`RCREC` v1):** Single-recipient `RCENC(kind=0x06, schema_ver=1, flags=0x00, resource_id=tenant_id)` to `RecoveryBip39` (`kem_data = empty`) wrapping `"RCREC"[5B] || 0x01[1B] || tenant_id[16B] || recovery_ver[4B BE] || store_identity_ed25519_seed[32B] || key_count[1B: 1..=3] || (vault_role[1B] || key_version[4B BE] || org_xwing_seed[32B]) * key_count` (unique `vault_role`s and distinct `org_xwing_seed`s).
+  - **Shamir Split (`RCSHR` v1, `105 B`):** Enhanced+ optional M-of-N (`2 <= M <= N <= 64`) over `GF(2^8)` (`x^8 + x^4 + x^3 + x + 1`, constant-time table-free arithmetic & Fermat `a^254` inversion). Wire frame: `"RCSHR"[5B] || 0x01[1B] || tenant_id[16B] || split_id[16B, non-zero] || threshold[1B] || total_shares[1B] || share_index[1B: 1..=N] || share_value[32B] || commitment_sha256[32B]`, where `commitment_sha256 = SHA-256("rustcom-v1-shamir-share-commit" || tenant_id || split_id || threshold || total_shares || share_index || share_value)`. Commitments provide share **integrity** (corruption detection and binding to stored/out-of-band commitments via `verify_commitment`), NOT cryptographic share authenticity against malicious share holders (not Feldman/Pedersen VSS). Combining `> M` shares verifies polynomial consistency across every extra share in constant time; downstream `RCREC` AEAD rejects wrong reconstructed secrets.
 
 ---
 
 ## 4. Mullvad / IVPN-Style 128-Bit Strict Account ID
 
-- **Entropy & Format:** 16 CSPRNG bytes (`128 bits`) -> `26` Crockford Base32 chars (`0123456789ABCDEFGHJKMNPQRSTVWXYZ`, top 2 pad bits `00`) + **2-char checksum** (top 10 bits of `BLAKE3_derive_key("rustcom-v1-account-id-chk", raw_16B)[0..2]`). Displayed as 28 chars (`XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX`). Client normalizes `i/l->1`, `o->0`.
+- **Entropy & Format:** 16 CSPRNG bytes (`128 bits`) encoded big-endian as `26` Crockford Base32 chars (`0123456789ABCDEFGHJKMNPQRSTVWXYZ`, top 2 pad bits of symbol 0 strictly `00` so symbol 0 is in `0..=7`; decoders MUST reject non-zero pad bits to enforce bijective canonicality) + **2-char checksum** (`10 bits` = top 10 bits of `BLAKE3_derive_key("rustcom-v1-account-id-chk", raw_16B)[0..2]`, split as high 5 bits `sym[26]` || low 5 bits `sym[27]`). Displayed as 28 chars (`XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX`, 34 chars with hyphens). Client strips ASCII whitespace/`-`, case-insensitively normalizes `i/l->1`, `o->0`, rejects `u`/`U`, and compares checksums in constant time (`subtle::ConstantTimeEq`).
 - **3 Domain-Separated Client Keys (WASM Only):**
   1. `auth_lookup_id = HKDF-SHA256(raw_16B, salt=tenant_id, info="rustcom-v1-strict-lookup")[0..16]` -> server indexes `BLAKE3_keyed(kms_pepper, tenant_id || auth_lookup_id)`.
   2. `auth_secret = HKDF-SHA256(raw_16B, salt=tenant_id, info="rustcom-v1-strict-auth")[0..32]` -> OPAQUE client password.
-  3. `customer_vault_seed = HKDF-SHA256(raw_16B, salt=tenant_id, info="rustcom-v1-strict-vault")[0..32]` -> derives buyer `X-Wing` + `Ed25519` keypair strictly inside browser.
+  3. `customer_vault_seed = HKDF-SHA256(raw_16B, salt=tenant_id, info="rustcom-v1-strict-vault")[0..32]` -> derives buyer `X-Wing` (`HKDF-SHA256(vault_seed, salt=tenant_id, info="rustcom-v1-strict-vault-xwing")[0..32]`) + `Ed25519` (`HKDF-SHA256(vault_seed, salt=tenant_id, info="rustcom-v1-strict-vault-ed25519")[0..32]`) keypairs strictly inside browser.
 
 ---
 
 ## 5. Private Products & Platform-Owned Verified-Purchase Review Tokens
 
-- **Private Products:** Random `ProductDEK` encrypts metadata into `RCENC(kind=0x04)`. Password mode wraps `ProductDEK` under `Argon2id(password, product_salt[32B], m=65536 KiB, t=3, p=1)`. VIP mode wraps `VipGroupKey` per member or delivers via URL hash fragment `#k=...`.
+- **Private Products (`RCENC(kind=0x04)`):** Random `ProductDEK` encrypts metadata into `RCENC(kind=0x04)` (with `schema_version != 0x8001` reserved for VIP key wrapping; merchants include `XWingOrgKey` alongside buyer access slots).
+  - **Password Mode (`recipient_type=0x05`, `key_id=product_id`, `password_version >= 1`):** Wraps `ProductDEK` under `Argon2id(v0x13, password, product_salt[32B], m=65536 KiB, t=3, p=1)`. Slot `kem_data` (`44B`) encodes `salt[32B] || m_cost_kib[4B BE] || t_cost[4B BE] || p_cost[4B BE]`. Protocol bounds enforce `m: 19456..=131072 KiB`, `t: 2..=8`, `p: 1..=4`, non-zero salt, password `1..=1024 B`; single-threaded browser WASM (`rustcom-crypto-wasm`) enforces the tighter `Argon2idBudget::WASM_CLIENT` ceiling (`m <= 65536 KiB`, `t <= 4`, `p <= 2`, `m * t <= 262144 KiB-iters`) before executing Argon2id to prevent browser tab OOM/CPU DoS.
+  - **VIP Group Mode (`recipient_type=0x04`, `key_id=vip_group_id`, `key_version >= 1`):** Each VIP group holds a versioned `X-Wing` keypair (`32B` seed). Group secret seeds are distributed either:
+    1. **Per-Member / Vault Wrap (`RCVIP` v1):** `RCENC(kind=0x04, schema_ver=0x8001, resource_id=vip_group_id)` encrypting the `74B` payload `"RCVIP" || 0x01 || tenant_id[16B] || vip_group_id[16B] || group_key_version[4B BE] || vip_group_seed[32B]` to `XWingCustomerVault` / `XWingOrgKey` recipients.
+    2. **URL Hash Fragment (`#k=<52-char Base64URL-unpadded>`):** Constant-time unpadded Base64URL encoding of `39B` (0 pad bits): `version=0x01[1B] || key_version[4B BE] || vip_group_seed[32B] || BLAKE3_derive_key("rustcom-v1-vip-fragment-chk", prefix_37B)[0..2]`. Never transmitted to servers (RFC 3986); parsers reject duplicate `k=` parameters.
 - **Platform Review Receipt Token (Zero-PII Verified Purchase, Even in Strict Tier):**
   ```text
   token_id = BLAKE3_keyed(PlatformReviewSecret, tenant_id || order_id || product_id)[0..16]
@@ -121,6 +150,13 @@ Fixed big-endian binary framing eliminates JSON canonicalization bugs across nat
 
 ## 6. Deterministic WASM Build & Rekor v2 JS-Proof (`/.well-known/rustcom-manifest.json`)
 
-- Pinned `rust-toolchain.toml`, `Cargo.lock` (`--locked`), digest-pinned Docker/Nix builder, pinned `wasm-bindgen-cli` & `binaryen` (`wasm-opt -Oz --strip-debug --strip-producers`), `RUSTFLAGS="--remap-path-prefix=$HOME=/home --remap-path-prefix=$PWD=/src --remap-path-prefix=$CARGO_HOME=/cargo"`, fixed `SOURCE_DATE_EPOCH`.
-- Dual-directory CI determinism gate (`/build-a` vs `/build-b` identical `sha256sum`) -> Sigstore Cosign OIDC attestation logged to **Rekor v2**.
-- `rustcom-verify` CLI (Dec 31 MVP) + Browser Extension (Phase 2) verify: (1) `sigstore_bundle` against Fulcio + Rekor v2, (2) live served JS/WASM + HTML `<script>` + CSP against manifest hashes with zero unlisted scripts, (3) `/.well-known/rustcom-skl.json` chain, (4) optional `--rebuild` from `git_commit` inside pinned Docker builder.
+- **Digest-Pinned Builder (`builder/Dockerfile.wasm` + `scripts/build-wasm-deterministic.sh`):**
+  - Non-root (`USER builder`) image pinned by exact SHA-256 digest (`rust:1.97.1-slim-bookworm@sha256:39f68a3e...46f1b`), pinned `rust-toolchain.toml` (`1.97.1`), `Cargo.lock` (`--locked`), SHA-256-verified `wasm-bindgen-cli` (`0.2.130`), and SHA-256-verified `binaryen` (`version_133`, `wasm-opt -Oz --strip-debug --strip-producers --enable-bulk-memory --enable-sign-ext --enable-mutable-globals --enable-nontrapping-float-to-int`).
+  - `RUSTFLAGS="--remap-path-prefix=$HOME=/home --remap-path-prefix=$WORK=/src --remap-path-prefix=$CARGO_HOME=/cargo -C debuginfo=0 -C strip=none"` (keeping `target_features` intact for `wasm-bindgen`, with `wasm-opt` stripping debug and producer custom sections afterwards), fixed `SOURCE_DATE_EPOCH`, `TZ=UTC`, `LC_ALL=C.UTF-8`, `CARGO_INCREMENTAL=0`.
+- **Dual-Path Determinism Gate:** Compiles `rustcom-crypto-wasm` twice in independent directory depths (`/build-a/workspace/src` vs `/build-b/alt-repro-path-check/workspace/src`) with `--network=none` over `vendor/` crates in CI, asserts identical `sha256sum` on both `rustcom_crypto_wasm.js` and `rustcom_crypto_wasm_bg.wasm`, and emits canonical `release-manifest.json` (`schema_version = 1`, `release_version`, 40-char `git_commit`, `source_date_epoch`, `builder_image_digest`, `toolchain`, sorted immutable `/assets/vX.Y.Z/*` artifacts with exact `size_bytes`, `sha256`, and `sri_sha384`).
+- **Sigstore Cosign v3 OIDC -> Rekor v2 + RFC 3161 TSA Attestation:** Signed via `cosign sign-blob --yes --new-bundle-format --use-signing-config --bundle release-manifest.sigstore.json release-manifest.json`, logged to Rekor v2 (`log2025-1.rekor.sigstore.dev`, `PKIX_ED25519` C2SP signed-note checkpoint + `hashedRekordV002` + RFC 6962 Merkle inclusion proof) and timestamped by Sigstore's RFC 3161 TSA (`timestamp.sigstore.dev`).
+- **`rustcom-verify` CLI (`crates/rustcom-verify`, Dec 31 MVP) + Browser Extension (Phase 2):** Pure-Rust `#![forbid(unsafe_code)]` verifier embedding the official Sigstore Public Good `trusted_root.json` (overriding requires `--trust-root <PATH> --unsafe-custom-trust-root` and prints the custom root SHA-256 fingerprint warning to stderr; all manifest, SKL, checkpoint, and Sigstore JSON parsers reject duplicate object keys including Unicode-escaped duplicates):
+  1. `manifest`: verifies Sigstore bundle (`v0.3`/`v0.2`/`v0.1`) against RFC 5280 Fulcio CA chain (P-384/P-256/Ed25519, `KeyUsage`, `pathLenConstraint`, critical-extension enforcement, `id-kp-codeSigning` EKU, non-CA leaf, OIDC Issuer + exact tag SAN `@refs/tags/v<release_version>` + Fulcio Source Repository Digest OID `1.3.6.1.4.1.57264.1.13 == git_commit`), **authenticated signing time** (RFC 3161 TSA `TSTInfo` `genTime` over artifact signature for Rekor v2, OR verified Rekor v1 `inclusionPromise.signedEntryTimestamp` SET -- never trusting unsigned `integratedTime`), AND Rekor v2 (`PKIX_ED25519` C2SP key hash `SHA-256(origin || "\n" || 0x01 || raw32)` + `hashedRekordV002`) / Rekor v1 (`PKIX_ECDSA_P256_SHA_256` + `hashedrekord v0.0.1`) RFC 6962 Merkle inclusion proof + C2SP checkpoint (`origin` + 4-byte `key_hint` verified).
+  2. `site`: verifies live served HTTP `Content-Type: text/html; charset=utf-8` (explicit UTF-8 required), HTTP CSP headers (comma-split multi-policy, strict allowlist on `script-src`/`script-src-elem`/`script-src-attr`/`object-src`/`base-uri`/`worker-src` + `child-src` fallback), WHATWG HTML5 tokenized `<script>` tags (`html5gum` with RCDATA/RAWTEXT/ScriptData state switching, entity decoding, forbidden active elements `<iframe>`/`<object>`/`<embed>`/`<svg>`/`<math>`, zero inline executable scripts, `serde_json`-validated JSON-LD blocks, zero `on*=`/`srcdoc`/`javascript:` URIs, zero unlisted scripts, constant-time SRI match), and no-redirect (`max_redirects=0`, 30s timeout) served JS/WASM bytes + `Content-Type` + `immutable` `Cache-Control`.
+  3. `skl`: verifies `/.well-known/rustcom-skl.json` chain + optional `--pinned-checkpoint`.
+  4. `rebuild`: exports a clean `git archive` of `git_commit`, enforces digest-pinned `<image>@sha256:... == manifest.builder_image_digest`, runs fixed-argv `--network=none` read-only Docker rebuild (requiring `vendor/` for offline mode or explicit `--allow-network`), reads rebuilt artifacts bounded after `symlink_metadata` length verification, and recursively verifies nested artifact paths with zero unexpected extra files, subdirectories, or symlinks.

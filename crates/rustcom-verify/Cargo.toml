@@ -1,0 +1,33 @@
+[package]
+name = "rustcom-verify"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+base64ct.workspace = true
+blake3.workspace = true
+clap.workspace = true
+der.workspace = true
+hex.workspace = true
+html5gum.workspace = true
+p256.workspace = true
+p384.workspace = true
+rustcom-crypto-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+ureq.workspace = true
+x509-cert.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+rand_core.workspace = true
+tempfile = "3.27.0"
