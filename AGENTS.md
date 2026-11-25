@@ -9,4 +9,4 @@ Public AGPL-3.0 auditable cryptography & JS-Proof repository.
 - Use `subtle::ConstantTimeEq` for all secret/tag/checksum comparisons.
 - Heap-allocate (`Box`) large ML-KEM polynomial structures to avoid `wasm32` stack overflow.
 - Keep `rustcom-crypto-core` strictly `no_std` + `alloc` compatible and deterministic for `wasm32-unknown-unknown` (`getrandom` `wasm_js`).
-- Any change to wire formats (`RCENC`, `RCSTR`, `StaffGrantV1`, `canonical_aad`) must update `docs/protocol-spec.md`, test vectors in `vectors/`, and pass `/sec-audit` (`security-reviewer`, Gemini 4 Neon).
+- Any change to wire formats (`RCENC`, `RCSTR`, `StaffGrantV1`, `canonical_aad`) must consult and update `docs/protocol-spec.md` on demand, update test vectors in `vectors/`, and pass `security-reviewer` (`gemini-4-neon#xhigh`).

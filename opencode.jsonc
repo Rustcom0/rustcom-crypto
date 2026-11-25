@@ -1,10 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "formatter": true,
-  "instructions": [
-    "AGENTS.md",
-    "docs/protocol-spec.md"
-  ],
   "watcher": {
     "ignore": [
       "target/**",
