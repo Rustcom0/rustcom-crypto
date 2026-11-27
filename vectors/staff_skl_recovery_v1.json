@@ -11,10 +11,10 @@
     "org_v2_xwing_seed_hex": "6162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80",
     "issued_at_unix": 1795400000,
     "expected_target_pk_hash_hex": "d7be270f7f8fd0ffda75abff21df2c5751fdc5c2e819e3c27aad35a1d9dc714d",
-    "expected_grant_wire_blake3_hex": "881177e032229c991164608a25c93aeed4c3a33f4f7279b1f80d4fcf7cd7567f",
-    "expected_staff_wrap_blake3_hex": "de777d1c434f26c7ddaf66e6629c2f26966467073e44872e9c8a8304cfb369a6",
+    "expected_grant_wire_blake3_hex": "0dbf6c728943843a0fe4b2dcd8bfe77832ca6aa2b5103e10133711805da91e58",
+    "expected_staff_wrap_blake3_hex": "6202be9427d41464b11360e0941a09b473c1543871e806d88bc5a308f6223739",
     "expected_staff_wrap_len": 1344,
-    "expected_archive_blake3_hex": "d25011b866167baa81b4a78e53fdc673f10e8aee46bee0acd88715f0b10bc1bf",
+    "expected_archive_blake3_hex": "65d176b5d4c22300da8178ea8cecb248e9496a11c2bf7c8bc81f35a2aca2c202",
     "expected_archive_len": 1332
   },
   "skl_chain_v1": {
@@ -24,9 +24,9 @@
     "org_v1_seed_hex": "1112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f30",
     "ful_v1_seed_hex": "3132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f50",
     "org_v2_seed_hex": "5152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f70",
-    "expected_e0_hash_hex": "f0601b470973e2e8e6abc516ba1a627cac46afa08e8728856909eea42c0725bf",
-    "expected_e1_hash_hex": "310d4fd5cfea23983048ddd0e1a1a3391dfac801d7c72194b8a4b427b1d8e3ba",
-    "expected_e2_hash_hex": "22a2f12d7b2d5ebfc56d823abd40617a4a4a5eaa54c5e3be5ce6468c3523a180"
+    "expected_e0_hash_hex": "74d9beade429fe1202adaa1b91c2f87395ca5790e523fd885e3089a17e2b81f2",
+    "expected_e1_hash_hex": "388a34938bebc93eb0d4db922f309b559170bf44e2f5acc239281344d012fd18",
+    "expected_e2_hash_hex": "671817f2eae02acd966ce83f889bb90194b1a66da7905daae7cc49c954cc7bf0"
   },
   "bip39_recovery_and_shamir_v1": {
     "rng_label_backup": "kat-recovery-backup-v1",
@@ -38,22 +38,22 @@
     "org_v1_seed_hex": "9192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0",
     "ful_v1_seed_hex": "b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0",
     "expected_mnemonic": "hamster diagram private dutch cause delay private meat slide toddler razor book happy fancy gospel tennis maple dilemma loan word shrug inflict delay length",
-    "expected_recovery_kek_hex": "b1801421a96fd14ab8178a5224e198f3f0f62da6d15a111172d6f27106b20507",
-    "expected_backup_blake3_hex": "6585b7ea040e03450505e9ae5cb9526feae68496f47e86d6aeb9afe62771b223",
+    "expected_recovery_kek_hex": "e7be9fbcca2c090ed1506fcdb61ee144d5a7c4f5d73f05a36015b74fcd2f337b",
+    "expected_backup_blake3_hex": "b48b45d320f4ae9958f1d55ff11e90ba759800c30dc745ccc86365676ededdd1",
     "expected_backup_len": 282,
     "expected_share_commitments_hex": [
-      "a16e82bce4ef7eb7d0972bd31a206758a0194a3dd6f877587eff689803ec5a1c",
-      "8563a03678c2ab54ee11d0e157523a23e334e83d204a35dd4dfd0bf48633dfc2",
-      "8d8b4c7c28a28009e254e0bed1cf69338fbb633f0452e8f791f67162847a0e6c",
-      "54d21b1b8951b0a3a3d6cc66d1cccc09f0dd214b8f7403544c410bdf3fc92d69",
-      "071f2f89f6a7617a4a82c47bc383bf1fd397f693adf7a7061c95449f524df619"
+      "75b41a78bc2d0543bb9b7752d95b8955e648777112937825051f02f78fc407a0",
+      "64e146b49d6f994f0c96524ce7429d70c51b1e2abcb3be15d075c8e95a4371c9",
+      "e42e30abcc33ef006284383f9ae41ca33b33f1f882ae9cccb3109c4731b695ef",
+      "033c5720ebd56b80decc6670d7510ff58cc4a50967f8cae3ff44b7a5b7c861d4",
+      "c581cb6a0ea15ed9de144cc90150eeb147de277660b13af8c656946f75a44398"
     ],
     "expected_share_wires_blake3_hex": [
-      "303ef8835a72e2f0ec254869cbbffb90e0a4cdf0e5bf7a3a0c4cd65e1964f57a",
-      "48202fe3da41ebe9f3bf8d7c002627559cc989b385d552fd3dca7d47f169c190",
-      "8ed32f4ed4a2f6a1120e1fb48782cf8af126dfcc29148bbbe5e3446364137e33",
-      "20393cc273bc7d04c72a9e042195a53eb0260f60905fcc79b73ea8a286dfba10",
-      "a2e355054b1a2dd2efd2dc5718e799fbe7025736df2fad132e99e29f78d5dc8e"
+      "178f64899b8b3d7c7b17706ac678b502a2b37359eeb505b0c467c5066742a628",
+      "882e4baf9d68edea4b8c9834a35e7c590c1a5ece714ba19803252d4487235ff8",
+      "36df2ea4aea1eb8b60464b9634412e4a33a367cc89dedacd951b69826d9027cb",
+      "979dd77baa1aec5d4f0269d0cf08a9fa891137b61508b2dc231266dc92a0960b",
+      "f3508ae592c0b33b1b2cd51bac7818bf1105a0b8c04ca0c49c988791afe16708"
     ]
   }
 }

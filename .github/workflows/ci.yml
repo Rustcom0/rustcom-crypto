@@ -37,7 +37,7 @@ jobs:
         run: |
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets -- -D warnings
-          cargo check -p rustcom-crypto-wasm --target wasm32-unknown-unknown
+          cargo check -p sovret-crypto-wasm --target wasm32-unknown-unknown
           cargo audit
           cargo deny check
           cargo nextest run --workspace

@@ -43,15 +43,15 @@ jobs:
       - name: Build digest-pinned deterministic WASM builder image
         id: builder
         run: |
-          docker build -f builder/Dockerfile.wasm -t rustcom-wasm-builder:release .
+          docker build -f builder/Dockerfile.wasm -t sovret-wasm-builder:release .
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             IMAGE_REF="ghcr.io/${GITHUB_REPOSITORY,,}/wasm-builder:${{ steps.meta.outputs.release_version }}"
-            docker tag rustcom-wasm-builder:release "${IMAGE_REF}"
+            docker tag sovret-wasm-builder:release "${IMAGE_REF}"
             docker push "${IMAGE_REF}"
             BUILDER_DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_REF}" | cut -d'@' -f2)"
           else
-            BUILDER_DIGEST="$(docker image inspect --format='{{.Id}}' rustcom-wasm-builder:release)"
+            BUILDER_DIGEST="$(docker image inspect --format='{{.Id}}' sovret-wasm-builder:release)"
           fi
           echo "digest=${BUILDER_DIGEST}" >> "$GITHUB_OUTPUT"
 
@@ -71,7 +71,7 @@ jobs:
             -e BUILDER_IMAGE_DIGEST="${{ steps.builder.outputs.digest }}" \
             --mount "type=bind,source=${PWD},target=/src,readonly" \
             --mount "type=bind,source=${PWD}/dist,target=/out" \
-            rustcom-wasm-builder:release
+            sovret-wasm-builder:release
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -94,7 +94,7 @@ jobs:
           name: deterministic-wasm-dist
           path: dist
 
-      - name: Install Rust toolchain for rustcom-verify self-check
+      - name: Install Rust toolchain for sovret-verify self-check
         uses: dtolnay/rust-toolchain@df2a88e9fe4098bad09cb42c3dec7187f15861fc
         with:
           toolchain: "1.97.1"
@@ -112,10 +112,10 @@ jobs:
             --bundle dist/release-manifest.sigstore.json \
             dist/release-manifest.json
 
-      - name: Self-verify release-manifest.json & Rekor v2 + TSA bundle with rustcom-verify
+      - name: Self-verify release-manifest.json & Rekor v2 + TSA bundle with sovret-verify
         run: |
-          cargo build --locked --release -p rustcom-verify
-          ./target/release/rustcom-verify manifest \
+          cargo build --locked --release -p sovret-verify
+          ./target/release/sovret-verify manifest \
             --manifest dist/release-manifest.json \
             --bundle dist/release-manifest.sigstore.json
 
@@ -124,9 +124,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${GITHUB_REF_NAME}" \
-            dist/rustcom_crypto_wasm.js \
-            dist/rustcom_crypto_wasm_bg.wasm \
+            dist/sovret_crypto_wasm.js \
+            dist/sovret_crypto_wasm_bg.wasm \
             dist/release-manifest.json \
             dist/release-manifest.sigstore.json \
-            --title "rustcom-crypto ${GITHUB_REF_NAME}" \
+            --title "sovret-crypto ${GITHUB_REF_NAME}" \
             --generate-notes

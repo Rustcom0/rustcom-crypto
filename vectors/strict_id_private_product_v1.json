@@ -3,16 +3,16 @@
     "raw_16b_hex": "00112233445566778899aabbccddeeff",
     "tenant_id_hex": "11223344556677889900aabbccddeeff",
     "kms_pepper_hex": "4242424242424242424242424242424242424242424242424242424242424242",
-    "signature_message_hex": "72757374636f6d2d7374726963742d706f7274616c2d68656c6c6f",
-    "expected_formatted": "0024-H36H-2NCS-VRH6-DAQF-6DVV-QZPQ",
-    "expected_compact": "0024H36H2NCSVRH6DAQF6DVVQZPQ",
-    "expected_lookup_id_hex": "600ee4ade545019e09554a169737f81a",
-    "expected_opaque_input_hex": "dc8490a6e4486b85627c719179b066fccd68620e75aeb40b0b4633e32900e1de",
-    "expected_customer_vault_seed_hex": "be160fe27d1eefd5d75cabd4c259a193c5d995f469426929126948c090b16994",
-    "expected_server_lookup_index_hex": "fbdf49fd48efaab91efae79d53ce4a6cf9e62efcdaef2eadfe91e8d347b4635d",
-    "expected_xwing_pk_blake3_hex": "1f411783644cac91fb5c1df5010760975ee05d9a43cbc58b10c339a678b2140f",
-    "expected_ed25519_vk_hex": "f2a2fa95b58ca47af53d54ae469de6fe49b27273faf7dd477cf46e30b040807f",
-    "expected_ed25519_sig_hex": "e267b0f1692c1bd18ee0da92ecbb1cfbb3adba236ab9ab91eefb0e78f27a39f2c13ff3949bb78713cd3010c4db86d915963c5485d11ad785e4eeeab925721d04"
+    "signature_message_hex": "736f767265742d7374726963742d706f7274616c2d68656c6c6f",
+    "expected_formatted": "0024-H36H-2NCS-VRH6-DAQF-6DVV-QZ1A",
+    "expected_compact": "0024H36H2NCSVRH6DAQF6DVVQZ1A",
+    "expected_lookup_id_hex": "efc1ceaadce668d539d323aae33027a4",
+    "expected_opaque_input_hex": "41726d2cf991e015ceaf36cdc8d411c7b689a19dba8d0947949a11b41492f02d",
+    "expected_customer_vault_seed_hex": "c09f20db122caa876889811c6858f45370bb11fe63cd543cbee8a22fb656118b",
+    "expected_server_lookup_index_hex": "37d04a17c601531602bbe24ee4eff7e45f092fd32af26b4377d6b047acebbf1d",
+    "expected_xwing_pk_blake3_hex": "292558e737050e3756a48fed3467cee84de2c2a096fbbdd80ce1520b88d8251e",
+    "expected_ed25519_vk_hex": "befc7761b5c743898bf5c4c2330b5767d196db7afea54f24033616a554cde48c",
+    "expected_ed25519_sig_hex": "1ec0cbc0a392935d41cbceb2e0e567e09a1a93ebe57a72bc9a2fe2db31635a7eb044ddc90b55c1b3cf84d38b0ba85e41bc8173df4406e0447cb356eefe230a01"
   },
   "private_product_password_v1": {
     "rng_label": "kat-private-product-password-v1",
@@ -25,9 +25,9 @@
     "t_cost": 3,
     "p_cost": 1,
     "plaintext_hex": "7b227469746c65223a224c696d697465642044726f7020233031227d",
-    "expected_kem_data_hex": "a1ef2475bbc1ecf643245dc71894a7a8a4454eb1f78562cb08a20f3177f1f5c6000100000000000300000001",
-    "expected_argon2_kek_hex": "97b9c20de527e51b5d5561317b17865940e3fe7bf85f57ffcb334c515dee2546",
-    "expected_envelope_blake3_hex": "0249f3f3624d97ce62973d6a8e7726d6637f654e49c92cf217b18613b1f6f8bd",
+    "expected_kem_data_hex": "b1c123f4003a80853d560c90a51f9878b188b885d5dae17e57b2252d348567dd000100000000000300000001",
+    "expected_argon2_kek_hex": "34b84a6556b231dd4fbfa253c4bd1b79f76bf86be0871bd0414f9c6744585538",
+    "expected_envelope_blake3_hex": "8be4671f23f3a2c806065bb462631778fcf0de228c33b1185112e8f4b22e2b5d",
     "expected_envelope_len": 1436
   },
   "private_product_vip_v1": {
@@ -41,10 +41,10 @@
     "product_id_hex": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     "group_key_version": 2,
     "plaintext_hex": "7b227469746c65223a22564950205661756c742045646974696f6e227d",
-    "expected_url_fragment": "#k=AQAAAAJQUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ubxwE",
-    "expected_member_wrap_blake3_hex": "dddeea6fa3d36621d8950bebf8d83f9f4bdee5557f7469282a85c8cc9d835982",
+    "expected_url_fragment": "#k=AQAAAAJQUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3tJ",
+    "expected_member_wrap_blake3_hex": "7d4b7121d511410f811afacf0b0d8adbf67b1fa5f5290d2c556e63e2d68973ee",
     "expected_member_wrap_len": 1343,
-    "expected_product_envelope_blake3_hex": "6c36a3b5dedf0e94fbc0fbfe01ca5fe9a67ac3fbc6073c72b3aca48221b8d308",
+    "expected_product_envelope_blake3_hex": "9fe2b39d724d3faa678ea3c3bdc6927b6b4c10b3cc73f3e6afc74e3946f31f9d",
     "expected_product_envelope_len": 2513
   }
 }

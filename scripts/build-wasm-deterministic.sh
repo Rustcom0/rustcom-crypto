@@ -54,20 +54,20 @@ build_in_path() {
   # Keep target_features intact for wasm-bindgen; wasm-opt strips debug/producers afterwards.
   local rustflags="--remap-path-prefix=${home_dir}=/home --remap-path-prefix=${work_src}=/src --remap-path-prefix=${cargo_home}=/cargo -C debuginfo=0 -C strip=none"
 
-  echo "[${label}] Building rustcom-crypto-wasm in ${work_src} ..."
+  echo "[${label}] Building sovret-crypto-wasm in ${work_src} ..."
   (
     cd "${work_src}"
     HOME="${home_dir}" \
     CARGO_TARGET_DIR="${target_dir}" \
     RUSTFLAGS="${rustflags}" \
-      cargo build --locked --release --target wasm32-unknown-unknown -p rustcom-crypto-wasm
+      cargo build --locked --release --target wasm32-unknown-unknown -p sovret-crypto-wasm
   )
 
   wasm-bindgen \
     --target web \
     --no-typescript \
     --out-dir "${dist_dir}" \
-    "${target_dir}/wasm32-unknown-unknown/release/rustcom_crypto_wasm.wasm"
+    "${target_dir}/wasm32-unknown-unknown/release/sovret_crypto_wasm.wasm"
 
   wasm-opt \
     -Oz \
@@ -77,13 +77,13 @@ build_in_path() {
     --enable-sign-ext \
     --enable-mutable-globals \
     --enable-nontrapping-float-to-int \
-    -o "${dist_dir}/rustcom_crypto_wasm_bg.wasm.opt" \
-    "${dist_dir}/rustcom_crypto_wasm_bg.wasm"
-  mv "${dist_dir}/rustcom_crypto_wasm_bg.wasm.opt" "${dist_dir}/rustcom_crypto_wasm_bg.wasm"
+    -o "${dist_dir}/sovret_crypto_wasm_bg.wasm.opt" \
+    "${dist_dir}/sovret_crypto_wasm_bg.wasm"
+  mv "${dist_dir}/sovret_crypto_wasm_bg.wasm.opt" "${dist_dir}/sovret_crypto_wasm_bg.wasm"
 
   touch -d "@${SOURCE_DATE_EPOCH}" \
-    "${dist_dir}/rustcom_crypto_wasm.js" \
-    "${dist_dir}/rustcom_crypto_wasm_bg.wasm"
+    "${dist_dir}/sovret_crypto_wasm.js" \
+    "${dist_dir}/sovret_crypto_wasm_bg.wasm"
 }
 
 # Build in two deliberately different directory depths & path lengths!
@@ -91,7 +91,7 @@ build_in_path "build-a" "/build-a/workspace"
 build_in_path "build-b" "/build-b/alt-repro-path-check/workspace"
 
 echo "=== Dual-Path Determinism Gate (/build-a vs /build-b) ==="
-for fname in rustcom_crypto_wasm.js rustcom_crypto_wasm_bg.wasm; do
+for fname in sovret_crypto_wasm.js sovret_crypto_wasm_bg.wasm; do
   hash_a="$(sha256sum "/build-a/workspace/dist/${fname}" | awk '{print $1}')"
   hash_b="$(sha256sum "/build-b/alt-repro-path-check/workspace/dist/${fname}" | awk '{print $1}')"
   echo "  ${fname}:"
@@ -104,19 +104,19 @@ for fname in rustcom_crypto_wasm.js rustcom_crypto_wasm_bg.wasm; do
 done
 
 mkdir -p "${OUT_DIR}"
-cp "/build-a/workspace/dist/rustcom_crypto_wasm.js" "${OUT_DIR}/rustcom_crypto_wasm.js"
-cp "/build-a/workspace/dist/rustcom_crypto_wasm_bg.wasm" "${OUT_DIR}/rustcom_crypto_wasm_bg.wasm"
-touch -d "@${SOURCE_DATE_EPOCH}" "${OUT_DIR}/rustcom_crypto_wasm.js" "${OUT_DIR}/rustcom_crypto_wasm_bg.wasm"
+cp "/build-a/workspace/dist/sovret_crypto_wasm.js" "${OUT_DIR}/sovret_crypto_wasm.js"
+cp "/build-a/workspace/dist/sovret_crypto_wasm_bg.wasm" "${OUT_DIR}/sovret_crypto_wasm_bg.wasm"
+touch -d "@${SOURCE_DATE_EPOCH}" "${OUT_DIR}/sovret_crypto_wasm.js" "${OUT_DIR}/sovret_crypto_wasm_bg.wasm"
 
-js_size="$(stat -c%s "${OUT_DIR}/rustcom_crypto_wasm.js")"
-js_sha256="$(sha256sum "${OUT_DIR}/rustcom_crypto_wasm.js" | awk '{print $1}')"
-js_sri="sha384-$(openssl dgst -sha384 -binary "${OUT_DIR}/rustcom_crypto_wasm.js" | openssl base64 -A)"
+js_size="$(stat -c%s "${OUT_DIR}/sovret_crypto_wasm.js")"
+js_sha256="$(sha256sum "${OUT_DIR}/sovret_crypto_wasm.js" | awk '{print $1}')"
+js_sri="sha384-$(openssl dgst -sha384 -binary "${OUT_DIR}/sovret_crypto_wasm.js" | openssl base64 -A)"
 
-wasm_size="$(stat -c%s "${OUT_DIR}/rustcom_crypto_wasm_bg.wasm")"
-wasm_sha256="$(sha256sum "${OUT_DIR}/rustcom_crypto_wasm_bg.wasm" | awk '{print $1}')"
-wasm_sri="sha384-$(openssl dgst -sha384 -binary "${OUT_DIR}/rustcom_crypto_wasm_bg.wasm" | openssl base64 -A)"
+wasm_size="$(stat -c%s "${OUT_DIR}/sovret_crypto_wasm_bg.wasm")"
+wasm_sha256="$(sha256sum "${OUT_DIR}/sovret_crypto_wasm_bg.wasm" | awk '{print $1}')"
+wasm_sri="sha384-$(openssl dgst -sha384 -binary "${OUT_DIR}/sovret_crypto_wasm_bg.wasm" | openssl base64 -A)"
 
-# Emit canonical sorted release-manifest.json matching `rustcom-verify::ReleaseManifestV1`.
+# Emit canonical sorted release-manifest.json matching `sovret-verify::ReleaseManifestV1`.
 cat > "${OUT_DIR}/release-manifest.json" <<EOF
 {
   "schema_version": 1,
@@ -131,14 +131,14 @@ cat > "${OUT_DIR}/release-manifest.json" <<EOF
   },
   "artifacts": [
     {
-      "path": "/assets/v${RELEASE_VERSION}/rustcom_crypto_wasm.js",
+      "path": "/assets/v${RELEASE_VERSION}/sovret_crypto_wasm.js",
       "media_type": "text/javascript",
       "size_bytes": ${js_size},
       "sha256": "${js_sha256}",
       "sri_sha384": "${js_sri}"
     },
     {
-      "path": "/assets/v${RELEASE_VERSION}/rustcom_crypto_wasm_bg.wasm",
+      "path": "/assets/v${RELEASE_VERSION}/sovret_crypto_wasm_bg.wasm",
       "media_type": "application/wasm",
       "size_bytes": ${wasm_size},
       "sha256": "${wasm_sha256}",
@@ -150,11 +150,11 @@ EOF
 touch -d "@${SOURCE_DATE_EPOCH}" "${OUT_DIR}/release-manifest.json"
 
 if command -v brotli >/dev/null 2>&1; then
-  js_br="$(brotli -q 11 -c "${OUT_DIR}/rustcom_crypto_wasm.js" | wc -c)"
-  wasm_br="$(brotli -q 11 -c "${OUT_DIR}/rustcom_crypto_wasm_bg.wasm" | wc -c)"
+  js_br="$(brotli -q 11 -c "${OUT_DIR}/sovret_crypto_wasm.js" | wc -c)"
+  wasm_br="$(brotli -q 11 -c "${OUT_DIR}/sovret_crypto_wasm_bg.wasm" | wc -c)"
   echo "=== Deterministic Output Sizes ==="
-  echo "  rustcom_crypto_wasm.js:      ${js_size} B raw / ${js_br} B brotli-11"
-  echo "  rustcom_crypto_wasm_bg.wasm: ${wasm_size} B raw / ${wasm_br} B brotli-11"
+  echo "  sovret_crypto_wasm.js:      ${js_size} B raw / ${js_br} B brotli-11"
+  echo "  sovret_crypto_wasm_bg.wasm: ${wasm_size} B raw / ${wasm_br} B brotli-11"
 fi
 
 echo "PASS: dual-path deterministic WASM build verified and release-manifest.json emitted."

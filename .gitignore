@@ -9,3 +9,6 @@
 .idea/
 .DS_Store
 Thumbs.db
+
+# Temporary agent handoff files (e.g. security findings)
+.tmp/

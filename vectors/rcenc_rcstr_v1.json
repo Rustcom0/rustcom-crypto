@@ -10,8 +10,8 @@
     "key_version": 1,
     "plaintext_hex": "7b226f72646572223a2252432d30303031222c2263697479223a224265726c696e227d",
     "expected_public_key_blake3_hex": "ece5aac3e2fc9dfbd6a9bafe80edf1981f01375e039ae4574c0f4df016a21e6e",
-    "expected_canonical_aad_hex": "72757374636f6d2d76312d616164011111111111111111111111111111111122222222222222222222222222222222030001c075a8baecbf82b9e614850b1823fb632df08bd0975fd90f08c8d471794e879d",
-    "expected_envelope_blake3_hex": "ffabb4bb84065bd0875cddef10b06f5b2271efc46ddd8ce710931b645bce7df1",
+    "expected_canonical_aad_hex": "736f767265742d76312d616164011111111111111111111111111111111122222222222222222222222222222222030001adc18464017e8d77fb73047a7448f9f7e7aba2cf99e9210d8ceadf5d2ca59b56",
+    "expected_envelope_blake3_hex": "3999bd366d02df3f6f23d3af769c6ff9053a98cb23a7f094f8857ff666a08fc5",
     "expected_envelope_len": 1304
   },
   "rcenc_v1_multi_compressed": {
@@ -23,7 +23,7 @@
     "tenant_id_hex": "55555555555555555555555555555555",
     "resource_id_hex": "66666666666666666666666666666666",
     "plaintext_hex": "50726976617465205649502070726f64756374206d65746164617461",
-    "expected_envelope_blake3_hex": "38f76885e7efab1f319dd6955f81ee49340d4d42dc066fb0f7722ed85a8b8c35",
+    "expected_envelope_blake3_hex": "874573f0919f5b741dd48b1ee1e50fee1655bd1a26e8406ab66ddc34a9ac7621",
     "expected_envelope_len": 1531
   },
   "rcstr_v1": {
@@ -32,9 +32,9 @@
     "tenant_id_hex": "33333333333333333333333333333333",
     "file_id_hex": "44444444444444444444444444444444",
     "chunk_size": 4096,
-    "plaintext_hex": "52757374636f6d20706f73742d7175616e74756d2073747265616d696e6720766563746f72",
-    "expected_stream_blake3_hex": "e4fef8911aa9006ff9c1fe02490af525a0deb9357ccf95f06c6836fab5b17ded",
-    "expected_stream_len": 1406
+    "plaintext_hex": "536f7672657420706f73742d7175616e74756d2073747265616d696e6720766563746f72",
+    "expected_stream_blake3_hex": "ef9bff76d1bbf2efa33b26a9feef53ef99ec1033efeef2d49bc3012abab5a83c",
+    "expected_stream_len": 1405
   },
   "rcstr_v1_multi_chunk": {
     "rng_label": "kat-rcstr-v1-multi-chunk-5000b",
@@ -43,7 +43,7 @@
     "file_id_hex": "88888888888888888888888888888888",
     "chunk_size": 4096,
     "plaintext_len": 5000,
-    "expected_stream_blake3_hex": "23f6c070a0322564f5e01f4ee1d06c26abfd1df2a25582f7dcc5b3445e9e7080",
+    "expected_stream_blake3_hex": "0dc88343ac9b1ff35db3a808c914228e0bd3f8a6dd453bb2c4e324e8cb024dd5",
     "expected_stream_len": 6385
   }
 }

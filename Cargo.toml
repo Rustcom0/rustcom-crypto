@@ -1,9 +1,9 @@
 [workspace]
 resolver = "3"
 members = [
-  "crates/rustcom-crypto-core",
-  "crates/rustcom-crypto-wasm",
-  "crates/rustcom-verify",
+  "crates/sovret-crypto-core",
+  "crates/sovret-crypto-wasm",
+  "crates/sovret-verify",
 ]
 
 [workspace.package]
@@ -11,7 +11,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.97"
 license = "AGPL-3.0-only"
-repository = "https://github.com/Rustcom0/rustcom-crypto"
+repository = "https://github.com/sovret/sovret-crypto"
 publish = false
 
 [workspace.lints.rust]
@@ -29,7 +29,7 @@ module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 
 [workspace.dependencies]
-rustcom-crypto-core = { path = "crates/rustcom-crypto-core" }
+sovret-crypto-core = { path = "crates/sovret-crypto-core" }
 
 argon2 = { version = "0.6.0", default-features = false, features = ["alloc", "zeroize"] }
 base64ct = { version = "1.8.3", default-features = false, features = ["alloc"] }
